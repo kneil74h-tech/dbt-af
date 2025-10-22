@@ -198,7 +198,6 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
 
     return {dag_name: dag}
 
-
 def _compile_dbt_dags(
     manifest_content: dict,
     profiles: dict,
