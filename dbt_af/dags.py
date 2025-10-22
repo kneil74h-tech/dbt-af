@@ -5,6 +5,7 @@ from typing import Optional
 import yaml
 from airflow.models.dag import DAG
 from airflow.models.param import Param
+from airflow.operators.python import BranchPythonOperator
 
 from dbt_af.builder.dbt_af_builder import BackfillDomainDag, DbtAfGraph, get_domain_dag_start_date
 from dbt_af.common.af_callbacks import collect_af_custom_callbacks
@@ -139,15 +140,58 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         **dag_callbacks,
     )
 
+    branch_task = BranchPythonOperator(
+        task_id="branch_on_client_id",
+        python_callable=lambda **context: f'dbt_model_{context["params"].get("target", "postgres")}',
+    )
+
     target_environment = config.dbt_default_targets.default_target
     DbtRun(
-        task_id='dbt_model',
+        task_id='dbt_model_postgres',
         model_name=None,
         dag=dag,
         target_environment=target_environment,
         dbt_af_config=config,
+        pool=f"dbt_postgres",
         **task_callbacks,
     )
+
+    DbtRun(
+        task_id='dbt_model_sparksql',
+        model_name=None,
+        dag=dag,
+        target_environment=target_environment,
+        dbt_af_config=config,
+        pool=f"dbt_sparksql",
+        **task_callbacks,
+    )
+
+    DbtRun(
+        task_id='dbt_model_clickhouse',
+        model_name=None,
+        dag=dag,
+        target_environment=target_environment,
+        dbt_af_config=config,
+        pool=f"dbt_clickhouse",
+        **task_callbacks,
+    )
+
+    DbtRun(
+        task_id='dbt_model_pyspark',
+        model_name=None,
+        dag=dag,
+        target_environment=target_environment,
+        dbt_af_config=config,
+        pool=f"dbt_pyspark",
+        **task_callbacks,
+    )
+
+    branch_task >> [
+        dag.get_task('dbt_model_postgres'),
+        dag.get_task('dbt_model_sparksql'),
+        dag.get_task('dbt_model_clickhouse'),
+        dag.get_task('dbt_model_pyspark'),
+    ]
 
     return {dag_name: dag}
 
