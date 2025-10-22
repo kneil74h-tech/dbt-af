@@ -145,6 +145,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         python_callable=lambda **context: (
             f'dbt_model_{context["params"].get("target") or "postgres"}'
         ),
+        dag=dag,
     )
 
     target_environment = config.dbt_default_targets.default_target
