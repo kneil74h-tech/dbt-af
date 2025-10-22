@@ -3,7 +3,7 @@ import logging
 import shutil
 from datetime import timedelta
 from tempfile import TemporaryDirectory
-from typing import Dict, Optional
+from typing import Dict, Optional, Sequence
 
 try:
     import pydantic.v1 as pydantic
@@ -37,6 +37,13 @@ class DbtBaseOperator(BashOperator):
         return self._patch_path_to_dbt_bash(
             **kwargs
         ) + f' cd $PATH_TO_DBT  && {self.dbt_af_config.dbt_executable_path} {self.cli} '.format(**kwargs)
+
+    template_fields: Sequence[str] = (
+        "bash_command",
+        "env",
+        "cwd",
+        "target_environment",
+    )
 
     def __init__(
         self,
