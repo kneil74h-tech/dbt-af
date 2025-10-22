@@ -141,7 +141,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
     )
 
     branch_task = BranchPythonOperator(
-        task_id="branch_on_client_id",
+        task_id="branch_on_target",
         python_callable=lambda **context: (
             f'dbt_model_{context["params"].get("target") or "postgres"}'
         ),
