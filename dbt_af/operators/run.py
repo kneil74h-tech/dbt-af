@@ -29,7 +29,11 @@ class DbtBaseDatasetOperator(DbtBaseActionOperator):
             if DBT_MODEL_DAG_PARAM in context['params'] and self.model_name == DBT_MODEL_DAG_PARAM:
                 # handle case for dbt_run_model DAG
                 self.bash_options['--select'] = context['params'][DBT_MODEL_DAG_PARAM]
-
+                self.pool = (
+                    f"dbt_{context['params'].get('target')}"
+                    if context['params'].get('target')
+                    else self.pool
+                )
                 bash_options, bash_flags = build_dbt_run_model_bash_extra_options(context['params'])
                 self.bash_options.update(bash_options)
                 self.bash_flags.update(bash_flags)
@@ -54,6 +58,29 @@ class DbtRun(DbtBaseDatasetOperator):
             **kwargs,
         )
 
+    def execute(self, context):
+        params = context.get('params', {}) or {}
+
+        # selector (для dbt_run_model DAG)
+        if DBT_MODEL_DAG_PARAM in params and self.model_name == DBT_MODEL_DAG_PARAM:
+            self.bash_options['--select'] = params[DBT_MODEL_DAG_PARAM]
+
+        # target override
+        target_override = params.get('target')
+        if target_override:
+            self.bash_options['--target'] = target_override
+            self.pool = f'dbt_{target_override}'
+
+        # full-refresh flag (ключ в params в DAG называется 'full-refresh')
+        if params.get('full-refresh'):
+            self.bash_flags.add('--full-refresh')
+
+        # дополнительные опции/флаги (парсит другие ключи из UI)
+        bash_options, bash_flags = build_dbt_run_model_bash_extra_options(params)
+        self.bash_options.update(bash_options)
+        self.bash_flags.update(bash_flags)
+
+        return super().execute(context)
 
 class DbtSeed(DbtBaseDatasetOperator):
     @property
