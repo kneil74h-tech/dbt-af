@@ -29,11 +29,6 @@ class DbtBaseDatasetOperator(DbtBaseActionOperator):
             if DBT_MODEL_DAG_PARAM in context['params'] and self.model_name == DBT_MODEL_DAG_PARAM:
                 # handle case for dbt_run_model DAG
                 self.bash_options['--select'] = context['params'][DBT_MODEL_DAG_PARAM]
-                self.pool = (
-                    f"dbt_{context['params'].get('target')}"
-                    if context['params'].get('target')
-                    else self.pool
-                )
                 bash_options, bash_flags = build_dbt_run_model_bash_extra_options(context['params'])
                 self.bash_options.update(bash_options)
                 self.bash_flags.update(bash_flags)

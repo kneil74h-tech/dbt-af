@@ -139,13 +139,14 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         **dag_callbacks,
     )
 
-    target_environment = config.dbt_default_targets.default_target
+    target_environment = dag.params.get("target") or config.dbt_default_targets.default_target
     DbtRun(
         task_id='dbt_model',
         model_name=None,
         dag=dag,
         target_environment=target_environment,
         dbt_af_config=config,
+        pool=f"dbt_{target_environment}",
         **task_callbacks,
     )
 
