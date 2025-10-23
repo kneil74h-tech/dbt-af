@@ -149,7 +149,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
     )
 
     target_environment = config.dbt_default_targets.default_target
-    DbtRun(
+    task_postgres = DbtRun(
         task_id='dbt_model_postgres',
         model_name=None,
         dag=dag,
@@ -159,7 +159,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         **task_callbacks,
     )
 
-    DbtRun(
+    task_sparksql= DbtRun(
         task_id='dbt_model_sparksql',
         model_name=None,
         dag=dag,
@@ -169,7 +169,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         **task_callbacks,
     )
 
-    DbtRun(
+    task_clickhouse = DbtRun(
         task_id='dbt_model_clickhouse',
         model_name=None,
         dag=dag,
@@ -179,7 +179,7 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
         **task_callbacks,
     )
 
-    DbtRun(
+    task_pyspark = DbtRun(
         task_id='dbt_model_pyspark',
         model_name=None,
         dag=dag,
@@ -190,10 +190,10 @@ def dbt_run_model_dag(config: Config) -> dict[str, DAG]:
     )
 
     branch_task >> [
-        dag.get_task('dbt_model_postgres'),
-        dag.get_task('dbt_model_sparksql'),
-        dag.get_task('dbt_model_clickhouse'),
-        dag.get_task('dbt_model_pyspark'),
+        task_postgres,
+        task_sparksql,
+        task_clickhouse,
+        task_pyspark,
     ]
 
     return {dag_name: dag}
